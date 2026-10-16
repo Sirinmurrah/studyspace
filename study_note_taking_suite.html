@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyFlow - Ultimate Study & Note-Taking Suite</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* 3D Flip Card Effect */
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.4); border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(107, 114, 128, 0.6); }
+
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 h-full flex overflow-hidden transition-colors duration-200">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col justify-between transition-all duration-300 z-30 shrink-0">
+        <div>
+            <!-- Logo Header -->
+            <div class="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-brand-600 text-white p-2 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/30">
+                        <i class="fa-solid fa-graduation-cap text-lg"></i>
+                    </div>
+                    <span class="font-bold text-lg tracking-tight text-gray-900 dark:text-white">StudyFlow</span>
+                </div>
+                <button id="toggle-sidebar-mobile" class="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="p-3 space-y-1">
+                <button onclick="switchTab('notes')" id="nav-notes" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400">
+                    <i class="fa-solid fa-book-open w-5 text-center"></i>
+                    <span>Notes Manager</span>
+                </button>
+                <button onclick="switchTab('flashcards')" id="nav-flashcards" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white">
+                    <i class="fa-solid fa-layer-group w-5 text-center"></i>
+                    <span>Flashcards</span>
+                </button>
+                <button onclick="switchTab('pomodoro')" id="nav-pomodoro" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white">
+                    <i class="fa-solid fa-stopwatch w-5 text-center"></i>
+                    <span>Pomodoro Timer</span>
+                </button>
+                <button onclick="switchTab('planner')" id="nav-planner" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white">
+                    <i class="fa-solid fa-list-check w-5 text-center"></i>
+                    <span>Study Planner</span>
+                </button>
+                <button onclick="switchTab('analytics')" id="nav-analytics" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white">
+                    <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                    <span>Analytics</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Sidebar Footer Controls -->
+        <div class="p-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
+            <!-- Theme Toggle -->
+            <button id="theme-toggle" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition">
+                <span class="flex items-center space-x-2">
+                    <i id="theme-icon" class="fa-solid fa-moon w-5"></i>
+                    <span id="theme-label">Dark Mode</span>
+                </span>
+                <span class="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-md text-gray-500 dark:text-gray-400">Toggle</span>
+            </button>
+            
+            <div class="px-3 py-2 bg-brand-50 dark:bg-gray-700/40 rounded-xl text-xs text-gray-600 dark:text-gray-400">
+                <div class="font-semibold text-gray-800 dark:text-gray-200 mb-1">Quick Tip 💡</div>
+                <p>Use Markdown in notes or convert them straight into flashcards!</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        <!-- Top Header Bar -->
+        <header class="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 sm:px-6 z-20 shrink-0">
+            <div class="flex items-center space-x-3">
+                <button id="toggle-sidebar" class="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+                <h1 id="page-title" class="text-xl font-bold text-gray-800 dark:text-white">Notes Manager</h1>
+            </div>
+
+            <!-- Quick Global Action / Info -->
+            <div class="flex items-center space-x-3">
+                <div id="quick-timer-status" class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300 text-xs font-semibold">
+                    <i class="fa-solid fa-clock animate-pulse"></i>
+                    <span id="header-timer-display">25:00</span>
+                </div>
+                <button onclick="createNewNote()" class="flex items-center space-x-2 bg-brand-600 hover:bg-brand-700 text-white px-3.5 py-2 rounded-xl text-sm font-medium shadow-sm transition-all duration-150">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span class="hidden sm:inline">New Note</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dynamic View Container -->
+        <main class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4 sm:p-6">
+
+            <!-- ================= NOTES MANAGER VIEW ================= -->
+            <div id="view-notes" class="view-panel h-full flex flex-col space-y-4">
+                <!-- Filters & Controls Toolbar -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <!-- Search Input -->
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                        <input type="text" id="notes-search" placeholder="Search title, content or tags..." oninput="renderNotes()" 
+                            class="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 dark:text-white">
+                    </div>
+                    
+                    <!-- Filters -->
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <select id="notes-subject-filter" onchange="renderNotes()" class="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 dark:text-white">
+                            <option value="ALL">All Subjects</option>
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Science">Science</option>
+                            <option value="History">History</option>
+                            <option value="Languages">Languages</option>
+                            <option value="General">General</option>
+                        </select>
+
+                        <select id="notes-sort" onchange="renderNotes()" class="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 dark:text-white">
+                            <option value="updated">Last Updated</option>
+                            <option value="created">Date Created</option>
+                            <option value="title">Title (A-Z)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Notes Workspace Split View -->
+                <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[500px]">
+                    <!-- Note List Sidebar Column -->
+                    <div class="lg:col-span-4 flex flex-col space-y-3 overflow-y-auto max-h-[calc(100vh-250px)] pr-1" id="notes-list-container">
+                        <!-- Dynamic Notes Cards Inserted Here -->
+                    </div>
+
+                    <!-- Note Editor Column -->
+                    <div class="lg:col-span-8 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col overflow-hidden" id="editor-container">
+                        <!-- Empty State Placeholder when no note selected -->
+                        <div id="editor-empty" class="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400 dark:text-gray-500">
+                            <i class="fa-solid fa-file-signature text-5xl mb-3 text-gray-300 dark:text-gray-600"></i>
+                            <h3 class="text-base font-semibold text-gray-700 dark:text-gray-300">No Note Selected</h3>
+                            <p class="text-xs max-w-sm mt-1">Select a note from the left sidebar to view or edit, or click "New Note" to create one.</p>
+                        </div>
+
+                        <!-- Active Editor Layout -->
+                        <div id="editor-active" class="hidden flex-1 flex flex-col h-full">
+                            <!-- Editor Header Toolbar -->
+                            <div class="p-4 border-b border-gray-200 dark:border-gray-700 space-y-3 bg-gray-50/50 dark:bg-gray-800/50">
+                                <div class="flex items-center justify-between gap-3">
+                                    <input type="text" id="editor-title" placeholder="Note Title..." oninput="autoSaveNote()" 
+                                        class="flex-1 text-lg font-bold bg-transparent border-none focus:outline-none dark:text-white">
+                                    
+                                    <div class="flex items-center space-x-2">
+                                        <button onclick="togglePinNote()" id="btn-pin-note" class="p-2 text-gray-400 hover:text-amber-500 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                                            <i class="fa-solid fa-thumbtack"></i>
+                                        </button>
+                                        <button onclick="convertNoteToFlashcards()" title="Convert Note Content into Flashcards" class="px-2.5 py-1.5 bg-brand-100 dark:bg-brand-900/50 text-brand-600 dark:text-brand-300 rounded-lg text-xs font-semibold hover:bg-brand-200 transition flex items-center space-x-1">
+                                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                            <span>Make Flashcards</span>
+                                        </button>
+                                        <button onclick="deleteCurrentNote()" class="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Note Metadata Controls -->
+                                <div class="flex flex-wrap items-center gap-3 text-xs">
+                                    <div class="flex items-center space-x-1">
+                                        <i class="fa-solid fa-folder text-gray-400"></i>
+                                        <select id="editor-subject" onchange="autoSaveNote()" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 dark:text-white focus:outline-none">
+                                            <option value="General">General</option>
+                                            <option value="Mathematics">Mathematics</option>
+                                            <option value="Science">Science</option>
+                                            <option value="History">History</option>
+                                            <option value="Languages">Languages</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center space-x-1 flex-1">
+                                        <i class="fa-solid fa-tags text-gray-400"></i>
+                                        <input type="text" id="editor-tags" placeholder="Tags (comma separated)..." oninput="autoSaveNote()" 
+                                            class="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 dark:text-white focus:outline-none">
+                                    </div>
+                                    <span id="editor-saved-status" class="text-gray-400 italic">Saved</span>
+                                </div>
+
+                                <!-- Formatting Tools Toolbar -->
+                                <div class="flex items-center space-x-1 border-t border-gray-200 dark:border-gray-700 pt-2 flex-wrap gap-y-1">
+                                    <button onclick="insertFormat('bold')" class="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs" title="Bold"><i class="fa-solid fa-bold"></i></button>
+                                    <button onclick="insertFormat('italic')" class="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs" title="Italic"><i class="fa-solid fa-italic"></i></button>
+                                    <button onclick="insertFormat('heading')" class="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs" title="Header"><i class="fa-solid fa-heading"></i></button>
+                                    <button onclick="insertFormat('list')" class="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs" title="Bullet List"><i class="fa-solid fa-list-ul"></i></button>
+                                    <button onclick="insertFormat('highlight')" class="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs" title="Highlight"><i class="fa-solid fa-highlighter"></i></button>
+                                    <div class="h-4 w-px bg-gray-300 dark:bg-gray-700 mx-1"></div>
+                                    <button onclick="togglePreviewMode()" id="btn-preview-toggle" class="px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium flex items-center space-x-1">
+                                        <i class="fa-solid fa-eye"></i>
+                                        <span id="preview-toggle-label">Preview</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Text Editor Area -->
+                            <div class="flex-1 relative p-4 flex flex-col">
+                                <textarea id="editor-body" oninput="autoSaveNote()" placeholder="Start typing your note here... (Markdown supported)" 
+                                    class="w-full flex-1 bg-transparent resize-none border-none focus:outline-none dark:text-white font-mono text-sm leading-relaxed"></textarea>
+                                
+                                <div id="editor-preview" class="hidden w-full flex-1 overflow-y-auto prose dark:prose-invert max-w-none text-sm leading-relaxed">
+                                    <!-- Rendered HTML Markdown Preview -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= FLASHCARDS VIEW ================= -->
+            <div id="view-flashcards" class="view-panel hidden space-y-6">
+                <!-- Top Deck Header Controls -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800 dark:text-white">Flashcard Decks</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Master key concepts with interactive spaced repetition practice</p>
+                    </div>
+
+                    <div class="flex items-center space-x-3">
+                        <button onclick="openNewFlashcardModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-medium transition shadow-sm flex items-center space-x-2">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Add Flashcard</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Deck Selector Tabs -->
+                <div class="flex items-center space-x-2 border-b border-gray-200 dark:border-gray-700 overflow-x-auto pb-2" id="flashcard-deck-tabs">
+                    <!-- Dynamic Deck Filter Tabs -->
+                </div>
+
+                <!-- Flashcard Practice Workspace -->
+                <div class="max-w-xl mx-auto my-8">
+                    <div id="flashcard-container" class="perspective-1000 w-full h-80 cursor-pointer">
+                        <div id="flashcard-inner" class="relative w-full h-full duration-500 transform-style-3d shadow-xl rounded-3xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col justify-between p-8 text-center">
+                            
+                            <!-- Card Front -->
+                            <div class="absolute inset-0 backface-hidden flex flex-col justify-between p-8 bg-white dark:bg-gray-800 rounded-3xl">
+                                <div class="flex justify-between items-center text-xs text-gray-400">
+                                    <span id="card-deck-tag" class="px-2.5 py-1 bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300 rounded-full font-semibold">Subject</span>
+                                    <span>Click to flip <i class="fa-solid fa-rotate text-xs ml-1"></i></span>
+                                </div>
+                                <div class="my-auto">
+                                    <p id="card-front-text" class="text-xl font-bold text-gray-800 dark:text-white">Select or create a card to begin study session.</p>
+                                </div>
+                                <div class="text-xs text-gray-400">Question</div>
+                            </div>
+
+                            <!-- Card Back -->
+                            <div class="absolute inset-0 backface-hidden rotate-y-180 flex flex-col justify-between p-8 bg-brand-50/30 dark:bg-gray-800/90 rounded-3xl border-2 border-brand-500/20">
+                                <div class="flex justify-between items-center text-xs text-gray-400">
+                                    <span class="text-brand-600 font-semibold">Answer</span>
+                                    <span>Click to flip <i class="fa-solid fa-rotate text-xs ml-1"></i></span>
+                                </div>
+                                <div class="my-auto">
+                                    <p id="card-back-text" class="text-lg font-medium text-gray-900 dark:text-gray-100">Card Answer will appear here.</p>
+                                </div>
+                                <div id="card-tags-container" class="flex justify-center gap-1"></div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Flashcard Navigation Controls & Evaluation -->
+                    <div class="mt-6 flex flex-col items-center space-y-4">
+                        <div class="flex items-center space-x-6">
+                            <button onclick="prevFlashcard()" class="p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 shadow-sm transition text-gray-700 dark:text-gray-200">
+                                <i class="fa-solid fa-arrow-left text-base"></i>
+                            </button>
+                            <span id="flashcard-counter" class="text-sm font-semibold text-gray-600 dark:text-gray-300">0 / 0</span>
+                            <button onclick="nextFlashcard()" class="p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 shadow-sm transition text-gray-700 dark:text-gray-200">
+                                <i class="fa-solid fa-arrow-right text-base"></i>
+                            </button>
+                        </div>
+
+                        <!-- Mastery Rating Buttons (Show during study session) -->
+                        <div class="flex items-center space-x-3 pt-2">
+                            <button onclick="markCardMastery(false)" class="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-xl text-xs font-semibold hover:bg-red-200 transition flex items-center space-x-1.5">
+                                <i class="fa-solid fa-xmark"></i>
+                                <span>Needs Review</span>
+                            </button>
+                            <button onclick="markCardMastery(true)" class="px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300 rounded-xl text-xs font-semibold hover:bg-green-200 transition flex items-center space-x-1.5">
+                                <i class="fa-solid fa-check"></i>
+                                <span>Mastered</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= POMODORO TIMER VIEW ================= -->
+            <div id="view-pomodoro" class="view-panel hidden space-y-6">
+                <div class="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6">
+                    
+                    <!-- Timer Main Interface -->
+                    <div class="md:col-span-7 bg-white dark:bg-gray-800 p-8 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col items-center justify-center text-center">
+                        <!-- Mode Tabs -->
+                        <div class="flex bg-gray-100 dark:bg-gray-700/50 p-1 rounded-2xl mb-8 space-x-1">
+                            <button onclick="setTimerMode('work')" id="timer-mode-work" class="px-4 py-1.5 rounded-xl text-xs font-bold transition bg-white dark:bg-gray-800 shadow-sm text-brand-600 dark:text-white">Pomodoro</button>
+                            <button onclick="setTimerMode('short')" id="timer-mode-short" class="px-4 py-1.5 rounded-xl text-xs font-bold transition text-gray-500 dark:text-gray-400">Short Break</button>
+                            <button onclick="setTimerMode('long')" id="timer-mode-long" class="px-4 py-1.5 rounded-xl text-xs font-bold transition text-gray-500 dark:text-gray-400">Long Break</button>
+                        </div>
+
+                        <!-- Radial Timer Ring -->
+                        <div class="relative w-64 h-64 flex items-center justify-center my-2">
+                            <svg class="w-full h-full transform -rotate-90">
+                                <circle cx="128" cy="128" r="110" stroke="currentColor" stroke-width="12" class="text-gray-200 dark:text-gray-700" fill="transparent"/>
+                                <circle id="timer-progress-circle" cx="128" cy="128" r="110" stroke="currentColor" stroke-width="12" class="text-brand-600 dark:text-brand-400 progress-ring__circle" stroke-dasharray="691.15" stroke-dashoffset="0" stroke-linecap="round" fill="transparent"/>
+                            </svg>
+                            <div class="absolute flex flex-col items-center">
+                                <span id="timer-display" class="text-5xl font-black tracking-tight text-gray-800 dark:text-white">25:00</span>
+                                <span id="timer-label-status" class="text-xs font-semibold text-gray-400 mt-2 tracking-widest uppercase">Focus Time</span>
+                            </div>
+                        </div>
+
+                        <!-- Control Buttons -->
+                        <div class="flex items-center space-x-4 mt-8">
+                            <button onclick="toggleTimer()" id="btn-timer-start" class="w-32 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-bold shadow-lg shadow-brand-500/25 transition transform active:scale-95 flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-play text-sm"></i>
+                                <span id="timer-start-text">Start</span>
+                            </button>
+                            <button onclick="resetTimer()" class="p-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-2xl transition">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                        </div>
+
+                        <div class="mt-6 text-xs text-gray-400">
+                            Completed Sessions Today: <span id="session-count-display" class="font-bold text-brand-600 dark:text-brand-400">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Ambient Sound & Timer Settings -->
+                    <div class="md:col-span-5 space-y-6">
+                        <!-- Sound Generators -->
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                            <h3 class="font-bold text-sm text-gray-800 dark:text-white mb-4 flex items-center space-x-2">
+                                <i class="fa-solid fa-headphones text-brand-600"></i>
+                                <span>Focus Audio Generator</span>
+                            </h3>
+
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-gray-900">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fa-solid fa-cloud-rain text-blue-500"></i>
+                                        <span class="text-xs font-semibold dark:text-gray-200">Rainfall</span>
+                                    </div>
+                                    <button onclick="toggleAmbientSound('rain')" id="btn-sound-rain" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-brand-500 hover:text-white transition">Play</button>
+                                </div>
+
+                                <div class="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-gray-900">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fa-solid fa-wind text-teal-500"></i>
+                                        <span class="text-xs font-semibold dark:text-gray-200">White Noise</span>
+                                    </div>
+                                    <button onclick="toggleAmbientSound('white')" id="btn-sound-white" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-brand-500 hover:text-white transition">Play</button>
+                                </div>
+
+                                <div class="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-gray-900">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fa-solid fa-tree text-emerald-500"></i>
+                                        <span class="text-xs font-semibold dark:text-gray-200">Forest Birds</span>
+                                    </div>
+                                    <button onclick="toggleAmbientSound('birds')" id="btn-sound-birds" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-brand-500 hover:text-white transition">Play</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timer Configuration -->
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                            <h3 class="font-bold text-sm text-gray-800 dark:text-white mb-4 flex items-center space-x-2">
+                                <i class="fa-solid fa-sliders text-brand-600"></i>
+                                <span>Interval Settings (Mins)</span>
+                            </h3>
+
+                            <div class="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label class="text-[10px] uppercase font-bold text-gray-400 block mb-1">Work</label>
+                                    <input type="number" id="input-work-min" value="25" min="1" max="120" onchange="updateTimerSettings()" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-center dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] uppercase font-bold text-gray-400 block mb-1">Short</label>
+                                    <input type="number" id="input-short-min" value="5" min="1" max="60" onchange="updateTimerSettings()" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-center dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] uppercase font-bold text-gray-400 block mb-1">Long</label>
+                                    <input type="number" id="input-long-min" value="15" min="1" max="60" onchange="updateTimerSettings()" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-center dark:text-white">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ================= STUDY PLANNER VIEW ================= -->
+            <div id="view-planner" class="view-panel hidden space-y-6">
+                <!-- Task Creation Bar -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <form onsubmit="handleAddTask(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                        <input type="text" id="task-title-input" placeholder="What do you need to study or complete?" required
+                            class="sm:col-span-5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        
+                        <select id="task-subject-input" class="sm:col-span-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm dark:text-white focus:outline-none">
+                            <option value="General">General</option>
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Science">Science</option>
+                            <option value="History">History</option>
+                            <option value="Languages">Languages</option>
+                        </select>
+
+                        <input type="date" id="task-date-input" class="sm:col-span-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm dark:text-white focus:outline-none">
+
+                        <button type="submit" class="sm:col-span-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-semibold transition py-2 flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                            <span>Add Task</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Planner Tasks Dashboard List -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-wrap gap-2">
+                        <h2 class="font-bold text-gray-800 dark:text-white text-base">Study Tasks & Assignments</h2>
+                        
+                        <div class="flex items-center space-x-2">
+                            <button onclick="filterPlannerTasks('all')" id="btn-task-filter-all" class="px-3 py-1 rounded-lg text-xs font-semibold bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300">All</button>
+                            <button onclick="filterPlannerTasks('active')" id="btn-task-filter-active" class="px-3 py-1 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">Active</button>
+                            <button onclick="filterPlannerTasks('completed')" id="btn-task-filter-completed" class="px-3 py-1 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">Completed</button>
+                        </div>
+                    </div>
+
+                    <div id="planner-tasks-list" class="divide-y divide-gray-100 dark:divide-gray-700/50">
+                        <!-- Dynamic Planner Items Inserted Here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= ANALYTICS VIEW ================= -->
+            <div id="view-analytics" class="view-panel hidden space-y-6">
+                <!-- Summary Metrics Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-semibold text-gray-400 uppercase">Total Notes</span>
+                            <h3 id="stat-total-notes" class="text-2xl font-black text-gray-800 dark:text-white mt-1">0</h3>
+                        </div>
+                        <div class="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl">
+                            <i class="fa-solid fa-file-lines text-xl"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-semibold text-gray-400 uppercase">Focus Minutes</span>
+                            <h3 id="stat-focus-time" class="text-2xl font-black text-gray-800 dark:text-white mt-1">0</h3>
+                        </div>
+                        <div class="p-3 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-2xl">
+                            <i class="fa-solid fa-clock text-xl"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-semibold text-gray-400 uppercase">Flashcards Mastered</span>
+                            <h3 id="stat-cards-mastered" class="text-2xl font-black text-gray-800 dark:text-white mt-1">0</h3>
+                        </div>
+                        <div class="p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-2xl">
+                            <i class="fa-solid fa-brain text-xl"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-semibold text-gray-400 uppercase">Tasks Completed</span>
+                            <h3 id="stat-tasks-done" class="text-2xl font-black text-gray-800 dark:text-white mt-1">0%</h3>
+                        </div>
+                        <div class="p-3 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl">
+                            <i class="fa-solid fa-circle-check text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Notes by Subject Bar Chart -->
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <h3 class="font-bold text-gray-800 dark:text-white text-sm mb-4">Notes Distribution by Subject</h3>
+                        <div class="h-64 relative">
+                            <canvas id="chart-subject-distribution"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Flashcard Mastery Doughnut Chart -->
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <h3 class="font-bold text-gray-800 dark:text-white text-sm mb-4">Flashcard Retention Status</h3>
+                        <div class="h-64 relative flex items-center justify-center">
+                            <canvas id="chart-flashcard-mastery"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ================= MODALS ================= -->
+    <!-- New Flashcard Modal -->
+    <div id="modal-flashcard" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3">
+                <h3 class="font-bold text-gray-800 dark:text-white text-base">Create Flashcard</h3>
+                <button onclick="closeFlashcardModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Subject Deck</label>
+                    <select id="modal-card-subject" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-2.5 text-sm dark:text-white">
+                        <option value="Mathematics">Mathematics</option>
+                        <option value="Science">Science</option>
+                        <option value="History">History</option>
+                        <option value="Languages">Languages</option>
+                        <option value="General">General</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Front (Question / Term)</label>
+                    <textarea id="modal-card-front" rows="3" placeholder="What is the equation for Albert Einstein's mass-energy equivalence?" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-2.5 text-sm dark:text-white resize-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Back (Answer / Definition)</label>
+                    <textarea id="modal-card-back" rows="3" placeholder="E = mc²" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-2.5 text-sm dark:text-white resize-none"></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 border-t border-gray-200 dark:border-gray-700 pt-3">
+                <button onclick="closeFlashcardModal()" class="px-4 py-2 text-xs font-semibold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition">Cancel</button>
+                <button onclick="saveNewFlashcard()" class="px-4 py-2 text-xs font-semibold bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition">Save Card</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- Application Script Core -->
+    <script>
+        /* ================= STATE MANAGEMENT ================= */
+        const DEFAULT_NOTES = [
+            {
+                id: '1',
+                title: 'Introduction to Calculus',
+                body: '# Fundamental Theorem of Calculus\n\nCalculus connects the concept of **derivatives** and **integrals**.\n\n- **Derivative**: Measures instant rate of change.\n- **Integral**: Measures total accumulated area under a curve.\n\nFormula: `∫ f(x) dx = F(b) - F(a)`',
+                subject: 'Mathematics',
+                tags: ['math', 'calculus', 'exam'],
+                pinned: true,
+                updatedAt: new Date().toISOString(),
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: '2',
+                title: 'World War II Summary',
+                body: '# WWII Overview (1939 - 1945)\n\nMajor Axis Powers:\n- Germany\n- Japan\n- Italy\n\nMajor Allied Powers:\n- Great Britain\n- United States\n- Soviet Union',
+                subject: 'History',
+                tags: ['history', 'ww2'],
+                pinned: false,
+                updatedAt: new Date(Date.now() - 86400000).toISOString(),
+                createdAt: new Date(Date.now() - 86400000).toISOString()
+            }
+        ];
+
+        const DEFAULT_FLASHCARDS = [
+            { id: '101', subject: 'Mathematics', front: 'What is the derivative of sin(x)?', back: 'cos(x)', mastered: false },
+            { id: '102', subject: 'Science', front: 'What is the speed of light in a vacuum?', back: 'Approximately 299,792,458 meters per second (3 × 10⁸ m/s).', mastered: true },
+            { id: '103', subject: 'History', front: 'When did WWII end?', back: 'September 2, 1945', mastered: true }
+        ];
+
+        const DEFAULT_TASKS = [
+            { id: 't1', title: 'Complete Calculus Chapter 3 Problems', subject: 'Mathematics', dueDate: '2026-10-20', completed: false },
+            { id: 't2', title: 'Read French Vocabulary List', subject: 'Languages', dueDate: '2026-10-18', completed: true }
+        ];
+
+        let state = {
+            notes: JSON.parse(localStorage.getItem('sf_notes')) || DEFAULT_NOTES,
+            flashcards: JSON.parse(localStorage.getItem('sf_flashcards')) || DEFAULT_FLASHCARDS,
+            tasks: JSON.parse(localStorage.getItem('sf_tasks')) || DEFAULT_TASKS,
+            stats: JSON.parse(localStorage.getItem('sf_stats')) || { focusMinutes: 45, completedPomodoros: 2 },
+            activeNoteId: null,
+            activeTab: 'notes',
+            flashcardDeckFilter: 'ALL',
+            currentFlashcardIdx: 0,
+            taskFilter: 'all',
+            previewMode: false,
+            darkMode: localStorage.getItem('sf_dark_mode') === 'true'
+        };
+
+        // Timer State
+        let timer = {
+            mode: 'work', // 'work', 'short', 'long'
+            timeLeft: 25 * 60,
+            duration: 25 * 60,
+            isRunning: false,
+            interval: null,
+            settings: { work: 25, short: 5, long: 15 }
+        };
+
+        // Web Audio Context for Ambient Generators
+        let audioCtx = null;
+        let activeAudioNodes = {};
+
+        /* ================= INITIALIZATION ================= */
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            renderNotes();
+            renderFlashcards();
+            renderPlannerTasks();
+            updateTimerDisplay();
+            initCharts();
+
+            // Handle Mobile Sidebar Toggle
+            document.getElementById('toggle-sidebar').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            });
+
+            // Card Flip Event Listener
+            const cardInner = document.getElementById('flashcard-inner');
+            document.getElementById('flashcard-container').addEventListener('click', (e) => {
+                if(!e.target.closest('button')) {
+                    cardInner.classList.toggle('rotate-y-180');
+                }
+            });
+        });
+
+        function saveToStorage() {
+            localStorage.setItem('sf_notes', JSON.stringify(state.notes));
+            localStorage.setItem('sf_flashcards', JSON.stringify(state.flashcards));
+            localStorage.setItem('sf_tasks', JSON.stringify(state.tasks));
+            localStorage.setItem('sf_stats', JSON.stringify(state.stats));
+        }
+
+        /* ================= NAVIGATION ================= */
+        function switchTab(tabName) {
+            state.activeTab = tabName;
+            document.querySelectorAll('.view-panel').forEach(panel => panel.classList.add('hidden'));
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = 'nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white';
+            });
+
+            const activeNav = document.getElementById(`nav-${tabName}`);
+            if(activeNav) {
+                activeNav.className = 'nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 font-semibold';
+            }
+
+            const pageTitles = {
+                notes: 'Notes Manager',
+                flashcards: 'Flashcards Practice',
+                pomodoro: 'Pomodoro Focus Timer',
+                planner: 'Study Planner',
+                analytics: 'Learning Analytics'
+            };
+            document.getElementById('page-title').innerText = pageTitles[tabName];
+
+            if(tabName === 'analytics') updateCharts();
+        }
+
+        /* ================= THEME TOGGLE ================= */
+        function initTheme() {
+            if (state.darkMode) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').className = 'fa-solid fa-sun w-5 text-amber-400';
+                document.getElementById('theme-label').innerText = 'Light Mode';
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('theme-icon').className = 'fa-solid fa-moon w-5 text-gray-600';
+                document.getElementById('theme-label').innerText = 'Dark Mode';
+            }
+        }
+
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            state.darkMode = !state.darkMode;
+            localStorage.setItem('sf_dark_mode', state.darkMode);
+            initTheme();
+        });
+
+        /* ================= NOTES MANAGER ================= */
+        function renderNotes() {
+            const container = document.getElementById('notes-list-container');
+            const searchVal = document.getElementById('notes-search').value.toLowerCase();
+            const subjectFilter = document.getElementById('notes-subject-filter').value;
+            const sortBy = document.getElementById('notes-sort').value;
+
+            let filtered = state.notes.filter(note => {
+                const matchesSearch = note.title.toLowerCase().includes(searchVal) || 
+                                     note.body.toLowerCase().includes(searchVal) ||
+                                     note.tags.some(t => t.toLowerCase().includes(searchVal));
+                const matchesSubject = subjectFilter === 'ALL' || note.subject === subjectFilter;
+                return matchesSearch && matchesSubject;
+            });
+
+            // Sorting
+            filtered.sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                if (sortBy === 'title') return a.title.localeCompare(b.title);
+                if (sortBy === 'created') return new Date(b.createdAt) - new Date(a.createdAt);
+                return new Date(b.updatedAt) - new Date(a.updatedAt);
+            });
+
+            container.innerHTML = '';
+
+            if(filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-400 text-xs">
+                        No notes found matching criteria.
+                    </div>`;
+                return;
+            }
+
+            filtered.forEach(note => {
+                const isActive = note.id === state.activeNoteId;
+                const card = document.createElement('div');
+                card.onclick = () => selectNote(note.id);
+                card.className = `p-4 rounded-2xl border transition-all duration-150 cursor-pointer ${
+                    isActive 
+                    ? 'bg-brand-50/80 dark:bg-brand-900/30 border-brand-500 shadow-sm' 
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-brand-300'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <h4 class="font-bold text-sm text-gray-800 dark:text-white truncate ${isActive ? 'text-brand-600 dark:text-brand-300' : ''}">${note.title || 'Untitled Note'}</h4>
+                        ${note.pinned ? '<i class="fa-solid fa-thumbtack text-amber-500 text-xs ml-1"></i>' : ''}
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1.5 leading-relaxed">${note.body.replace(/[#*`]/g, '') || 'Empty note content...'}</p>
+                    <div class="flex items-center justify-between mt-3 text-[10px] text-gray-400">
+                        <span class="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-medium">${note.subject}</span>
+                        <span>${new Date(note.updatedAt).toLocaleDateString()}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function createNewNote() {
+            const newNote = {
+                id: Date.now().toString(),
+                title: 'New Study Note',
+                body: '',
+                subject: 'General',
+                tags: [],
+                pinned: false,
+                updatedAt: new Date().toISOString(),
+                createdAt: new Date().toISOString()
+            };
+
+            state.notes.unshift(newNote);
+            saveToStorage();
+            switchTab('notes');
+            selectNote(newNote.id);
+            showToast('New note created!');
+        }
+
+        function selectNote(id) {
+            state.activeNoteId = id;
+            const note = state.notes.find(n => n.id === id);
+            
+            if(!note) return;
+
+            document.getElementById('editor-empty').classList.add('hidden');
+            document.getElementById('editor-active').classList.remove('hidden');
+
+            document.getElementById('editor-title').value = note.title;
+            document.getElementById('editor-body').value = note.body;
+            document.getElementById('editor-subject').value = note.subject;
+            document.getElementById('editor-tags').value = note.tags.join(', ');
+            
+            const pinBtn = document.getElementById('btn-pin-note');
+            pinBtn.className = note.pinned ? 'p-2 text-amber-500 rounded-lg bg-amber-50 dark:bg-amber-900/20' : 'p-2 text-gray-400 hover:text-amber-500 rounded-lg';
+
+            if(state.previewMode) renderPreview();
+            renderNotes();
+        }
+
+        function autoSaveNote() {
+            if(!state.activeNoteId) return;
+
+            const note = state.notes.find(n => n.id === state.activeNoteId);
+            if(!note) return;
+
+            note.title = document.getElementById('editor-title').value;
+            note.body = document.getElementById('editor-body').value;
+            note.subject = document.getElementById('editor-subject').value;
+            note.tags = document.getElementById('editor-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+            note.updatedAt = new Date().toISOString();
+
+            document.getElementById('editor-saved-status').innerText = 'Saving...';
+            
+            saveToStorage();
+            renderNotes();
+
+            setTimeout(() => {
+                document.getElementById('editor-saved-status').innerText = 'Saved';
+            }, 600);
+        }
+
+        function togglePinNote() {
+            if(!state.activeNoteId) return;
+            const note = state.notes.find(n => n.id === state.activeNoteId);
+            if(note) {
+                note.pinned = !note.pinned;
+                saveToStorage();
+                selectNote(note.id);
+            }
+        }
+
+        function deleteCurrentNote() {
+            if(!state.activeNoteId) return;
+            state.notes = state.notes.filter(n => n.id !== state.activeNoteId);
+            state.activeNoteId = null;
+            saveToStorage();
+
+            document.getElementById('editor-active').classList.add('hidden');
+            document.getElementById('editor-empty').classList.remove('hidden');
+
+            renderNotes();
+            showToast('Note deleted.');
+        }
+
+        function insertFormat(type) {
+            const textarea = document.getElementById('editor-body');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+
+            let replacement = '';
+            switch(type) {
+                case 'bold': replacement = `**${selectedText || 'bold text'}**`; break;
+                case 'italic': replacement = `*${selectedText || 'italic text'}*`; break;
+                case 'heading': replacement = `\n# ${selectedText || 'Heading'}`; break;
+                case 'list': replacement = `\n- ${selectedText || 'List item'}`; break;
+                case 'highlight': replacement = `<mark>${selectedText || 'highlighted text'}</mark>`; break;
+            }
+
+            textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+            autoSaveNote();
+        }
+
+        function togglePreviewMode() {
+            state.previewMode = !state.previewMode;
+            const bodyEl = document.getElementById('editor-body');
+            const previewEl = document.getElementById('editor-preview');
+            const toggleLabel = document.getElementById('preview-toggle-label');
+
+            if(state.previewMode) {
+                bodyEl.classList.add('hidden');
+                previewEl.classList.remove('hidden');
+                toggleLabel.innerText = 'Edit Mode';
+                renderPreview();
+            } else {
+                bodyEl.classList.remove('hidden');
+                previewEl.classList.add('hidden');
+                toggleLabel.innerText = 'Preview';
+            }
+        }
+
+        function renderPreview() {
+            const bodyVal = document.getElementById('editor-body').value;
+            document.getElementById('editor-preview').innerHTML = marked.parse(bodyVal || '*No content*');
+        }
+
+        /* ================= FLASHCARDS SYSTEM ================= */
+        function renderFlashcards() {
+            const tabsContainer = document.getElementById('flashcard-deck-tabs');
+            const subjects = ['ALL', 'Mathematics', 'Science', 'History', 'Languages', 'General'];
+
+            // Build Subject Filter Tabs
+            tabsContainer.innerHTML = '';
+            subjects.forEach(sub => {
+                const btn = document.createElement('button');
+                btn.onclick = () => { state.flashcardDeckFilter = sub; state.currentFlashcardIdx = 0; renderFlashcards(); };
+                btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+                    state.flashcardDeckFilter === sub 
+                    ? 'bg-brand-600 text-white shadow-sm' 
+                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100'
+                }`;
+                btn.innerText = sub;
+                tabsContainer.appendChild(btn);
+            });
+
+            // Filter Active Cards
+            const cards = getFilteredCards();
+            const counterEl = document.getElementById('flashcard-counter');
+
+            if(cards.length === 0) {
+                document.getElementById('card-front-text').innerText = 'No flashcards in this deck yet.';
+                document.getElementById('card-back-text').innerText = 'Click "Add Flashcard" to create key study prompts!';
+                document.getElementById('card-deck-tag').innerText = state.flashcardDeckFilter;
+                counterEl.innerText = '0 / 0';
+                return;
+            }
+
+            if(state.currentFlashcardIdx >= cards.length) state.currentFlashcardIdx = 0;
+
+            const card = cards[state.currentFlashcardIdx];
+            document.getElementById('card-front-text').innerText = card.front;
+            document.getElementById('card-back-text').innerText = card.back;
+            document.getElementById('card-deck-tag').innerText = card.subject;
+            counterEl.innerText = `${state.currentFlashcardIdx + 1} / ${cards.length}`;
+            
+            // Ensure Card Back Visible is reset on switch
+            document.getElementById('flashcard-inner').classList.remove('rotate-y-180');
+        }
+
+        function getFilteredCards() {
+            if(state.flashcardDeckFilter === 'ALL') return state.flashcards;
+            return state.flashcards.filter(c => c.subject === state.flashcardDeckFilter);
+        }
+
+        function nextFlashcard() {
+            const cards = getFilteredCards();
+            if(cards.length === 0) return;
+            state.currentFlashcardIdx = (state.currentFlashcardIdx + 1) % cards.length;
+            renderFlashcards();
+        }
+
+        function prevFlashcard() {
+            const cards = getFilteredCards();
+            if(cards.length === 0) return;
+            state.currentFlashcardIdx = (state.currentFlashcardIdx - 1 + cards.length) % cards.length;
+            renderFlashcards();
+        }
+
+        function markCardMastery(isMastered) {
+            const cards = getFilteredCards();
+            if(cards.length === 0) return;
+            
+            const currentCard = cards[state.currentFlashcardIdx];
+            currentCard.mastered = isMastered;
+            saveToStorage();
+
+            showToast(isMastered ? 'Marked as Mastered! 🎉' : 'Saved for review.');
+            nextFlashcard();
+        }
+
+        function openNewFlashcardModal() {
+            document.getElementById('modal-flashcard').classList.remove('hidden');
+        }
+
+        function closeFlashcardModal() {
+            document.getElementById('modal-flashcard').classList.add('hidden');
+        }
+
+        function saveNewFlashcard() {
+            const subject = document.getElementById('modal-card-subject').value;
+            const front = document.getElementById('modal-card-front').value.trim();
+            const back = document.getElementById('modal-card-back').value.trim();
+
+            if(!front || !back) {
+                showToast('Please fill in both front and back fields.');
+                return;
+            }
+
+            state.flashcards.push({
+                id: Date.now().toString(),
+                subject,
+                front,
+                back,
+                mastered: false
+            });
+
+            saveToStorage();
+            closeFlashcardModal();
+            renderFlashcards();
+            showToast('Flashcard created successfully!');
+
+            // Reset Modal
+            document.getElementById('modal-card-front').value = '';
+            document.getElementById('modal-card-back').value = '';
+        }
+
+        function convertNoteToFlashcards() {
+            if(!state.activeNoteId) return;
+            const note = state.notes.find(n => n.id === state.activeNoteId);
+            if(!note) return;
+
+            // Simple auto-extract concept: turn note title into front and snippet into back
+            state.flashcards.push({
+                id: Date.now().toString(),
+                subject: note.subject,
+                front: `Key Concept: ${note.title}`,
+                back: note.body.slice(0, 150) + '...',
+                mastered: false
+            });
+
+            saveToStorage();
+            showToast('Converted note into a Flashcard deck item!');
+            switchTab('flashcards');
+        }
+
+        /* ================= POMODORO TIMER ================= */
+        function updateTimerDisplay() {
+            const mins = Math.floor(timer.timeLeft / 60);
+            const secs = timer.timeLeft % 60;
+            const formatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            
+            document.getElementById('timer-display').innerText = formatted;
+            document.getElementById('header-timer-display').innerText = formatted;
+
+            // Update Circle Stroke Progress
+            const circle = document.getElementById('timer-progress-circle');
+            const circumference = 2 * Math.PI * 110;
+            const offset = circumference - (timer.timeLeft / timer.duration) * circumference;
+            circle.style.strokeDashoffset = offset;
+        }
+
+        function setTimerMode(mode) {
+            timer.mode = mode;
+            pauseTimer();
+
+            document.querySelectorAll('#view-pomodoro button[id^="timer-mode-"]').forEach(btn => {
+                btn.className = 'px-4 py-1.5 rounded-xl text-xs font-bold transition text-gray-500 dark:text-gray-400';
+            });
+
+            const activeBtn = document.getElementById(`timer-mode-${mode}`);
+            activeBtn.className = 'px-4 py-1.5 rounded-xl text-xs font-bold transition bg-white dark:bg-gray-800 shadow-sm text-brand-600 dark:text-white';
+
+            const statusLabels = { work: 'Focus Time', short: 'Short Break', long: 'Long Break' };
+            document.getElementById('timer-label-status').innerText = statusLabels[mode];
+
+            timer.duration = timer.settings[mode] * 60;
+            timer.timeLeft = timer.duration;
+            updateTimerDisplay();
+        }
+
+        function toggleTimer() {
+            if(timer.isRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            timer.isRunning = true;
+            document.getElementById('btn-timer-start').classList.replace('bg-brand-600', 'bg-amber-600');
+            document.getElementById('timer-start-text').innerText = 'Pause';
+
+            timer.interval = setInterval(() => {
+                if(timer.timeLeft > 0) {
+                    timer.timeLeft--;
+                    updateTimerDisplay();
+                } else {
+                    pauseTimer();
+                    playBeepSound();
+                    showToast('Pomodoro session completed!');
+
+                    if(timer.mode === 'work') {
+                        state.stats.focusMinutes += timer.settings.work;
+                        state.stats.completedPomodoros++;
+                        document.getElementById('session-count-display').innerText = state.stats.completedPomodoros;
+                        saveToStorage();
+                        setTimerMode('short');
+                    } else {
+                        setTimerMode('work');
+                    }
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            timer.isRunning = false;
+            clearInterval(timer.interval);
+            document.getElementById('btn-timer-start').classList.replace('bg-amber-600', 'bg-brand-600');
+            document.getElementById('timer-start-text').innerText = 'Start';
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timer.timeLeft = timer.duration;
+            updateTimerDisplay();
+        }
+
+        function updateTimerSettings() {
+            timer.settings.work = parseInt(document.getElementById('input-work-min').value) || 25;
+            timer.settings.short = parseInt(document.getElementById('input-short-min').value) || 5;
+            timer.settings.long = parseInt(document.getElementById('input-long-min').value) || 15;
+            setTimerMode(timer.mode);
+        }
+
+        // Web Audio Synthesizer for Focus Ambiance & Alerts
+        function playBeepSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5 note
+                osc.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.5);
+            } catch(e) { console.log(e); }
+        }
+
+        function toggleAmbientSound(type) {
+            if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            const btn = document.getElementById(`btn-sound-${type}`);
+
+            if(activeAudioNodes[type]) {
+                activeAudioNodes[type].stop();
+                delete activeAudioNodes[type];
+                btn.innerText = 'Play';
+                btn.className = 'px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-brand-500 hover:text-white transition';
+            } else {
+                const bufferSize = audioCtx.sampleRate * 2;
+                const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+
+                const whiteNoise = audioCtx.createBufferSource();
+                whiteNoise.buffer = noiseBuffer;
+                whiteNoise.loop = true;
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = type === 'rain' ? 'lowpass' : (type === 'birds' ? 'bandpass' : 'highpass');
+                filter.frequency.value = type === 'rain' ? 800 : 2000;
+
+                whiteNoise.connect(filter);
+                filter.connect(audioCtx.destination);
+                whiteNoise.start();
+
+                activeAudioNodes[type] = whiteNoise;
+                btn.innerText = 'Stop';
+                btn.className = 'px-3 py-1 bg-brand-600 rounded-lg text-xs font-semibold text-white transition';
+            }
+        }
+
+        /* ================= STUDY PLANNER ================= */
+        function renderPlannerTasks() {
+            const container = document.getElementById('planner-tasks-list');
+            container.innerHTML = '';
+
+            let filtered = state.tasks;
+            if(state.taskFilter === 'active') filtered = state.tasks.filter(t => !t.completed);
+            if(state.taskFilter === 'completed') filtered = state.tasks.filter(t => t.completed);
+
+            if(filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-xs text-gray-400">
+                        No tasks found in this view.
+                    </div>`;
+                return;
+            }
+
+            filtered.forEach(task => {
+                const item = document.createElement('div');
+                item.className = 'p-4 flex items-center justify-between hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition';
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTaskStatus('${task.id}')"
+                            class="w-4 h-4 text-brand-600 rounded border-gray-300 focus:ring-brand-500 cursor-pointer">
+                        <div>
+                            <span class="text-sm font-semibold dark:text-white ${task.completed ? 'line-through text-gray-400 dark:text-gray-500' : ''}">${task.title}</span>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300">${task.subject}</span>
+                                ${task.dueDate ? `<span class="text-[10px] text-gray-400"><i class="fa-regular fa-calendar mr-1"></i>${task.dueDate}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="deleteTask('${task.id}')" class="text-gray-400 hover:text-red-500 text-xs p-2">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function handleAddTask(e) {
+            e.preventDefault();
+            const title = document.getElementById('task-title-input').value.trim();
+            const subject = document.getElementById('task-subject-input').value;
+            const dueDate = document.getElementById('task-date-input').value;
+
+            if(!title) return;
+
+            state.tasks.push({
+                id: Date.now().toString(),
+                title,
+                subject,
+                dueDate,
+                completed: false
+            });
+
+            saveToStorage();
+            renderPlannerTasks();
+            document.getElementById('task-title-input').value = '';
+            showToast('Task added to planner!');
+        }
+
+        function toggleTaskStatus(id) {
+            const task = state.tasks.find(t => t.id === id);
+            if(task) {
+                task.completed = !task.completed;
+                saveToStorage();
+                renderPlannerTasks();
+            }
+        }
+
+        function deleteTask(id) {
+            state.tasks = state.tasks.filter(t => t.id !== id);
+            saveToStorage();
+            renderPlannerTasks();
+        }
+
+        function filterPlannerTasks(status) {
+            state.taskFilter = status;
+            document.querySelectorAll('#view-planner button[id^="btn-task-filter-"]').forEach(btn => {
+                btn.className = 'px-3 py-1 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700';
+            });
+            document.getElementById(`btn-task-filter-${status}`).className = 'px-3 py-1 rounded-lg text-xs font-semibold bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300';
+            renderPlannerTasks();
+        }
+
+        /* ================= ANALYTICS & CHARTS ================= */
+        let chartSubject = null;
+        let chartMastery = null;
+
+        function initCharts() {
+            const ctxSubject = document.getElementById('chart-subject-distribution').getContext('2d');
+            chartSubject = new Chart(ctxSubject, {
+                type: 'bar',
+                data: {
+                    labels: ['Mathematics', 'Science', 'History', 'Languages', 'General'],
+                    datasets: [{
+                        label: 'Notes',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+
+            const ctxMastery = document.getElementById('chart-flashcard-mastery').getContext('2d');
+            chartMastery = new Chart(ctxMastery, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Mastered', 'Needs Review'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#10b981', '#f59e0b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            updateCharts();
+        }
+
+        function updateCharts() {
+            // Stats Numbers
+            document.getElementById('stat-total-notes').innerText = state.notes.length;
+            document.getElementById('stat-focus-time').innerText = `${state.stats.focusMinutes}m`;
+            
+            const masteredCount = state.flashcards.filter(c => c.mastered).length;
+            document.getElementById('stat-cards-mastered').innerText = masteredCount;
+
+            const totalTasks = state.tasks.length;
+            const completedTasks = state.tasks.filter(t => t.completed).length;
+            const taskPct = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+            document.getElementById('stat-tasks-done').innerText = `${taskPct}%`;
+
+            // Subject Distribution Chart Update
+            const subjectCounts = { Mathematics: 0, Science: 0, History: 0, Languages: 0, General: 0 };
+            state.notes.forEach(n => {
+                if(subjectCounts[n.subject] !== undefined) subjectCounts[n.subject]++;
+                else subjectCounts.General++;
+            });
+
+            if(chartSubject) {
+                chartSubject.data.datasets[0].data = Object.values(subjectCounts);
+                chartSubject.update();
+            }
+
+            // Flashcard Mastery Chart Update
+            if(chartMastery) {
+                chartMastery.data.datasets[0].data = [masteredCount, state.flashcards.length - masteredCount];
+                chartMastery.update();
+            }
+        }
+
+        /* ================= UI TOAST ALERTS ================= */
+        function showToast(msg) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg transition-all duration-300 opacity-0 transform translate-y-2 pointer-events-auto';
+            toast.innerText = msg;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-2');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
