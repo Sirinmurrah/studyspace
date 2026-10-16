@@ -1,0 +1,279 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudySpace</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f1f5f2;
+  color: #24372e;
+}
+header {
+  background: #245c4b;
+  color: white;
+  padding: 24px;
+  text-align: center;
+}
+header h1 { margin: 0 0 8px; }
+.layout {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  min-height: 85vh;
+}
+nav {
+  background: white;
+  padding: 20px;
+  border-right: 1px solid #ddd;
+}
+nav button {
+  display: block;
+  width: 100%;
+  margin: 8px 0;
+  padding: 12px;
+  border: 0;
+  border-radius: 8px;
+  background: #e4f0e8;
+  color: #245c4b;
+  cursor: pointer;
+  text-align: left;
+}
+main { padding: 25px; }
+.panel {
+  background: white;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px #00000008;
+}
+input, textarea, select {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #d4ded6;
+  border-radius: 8px;
+  font: inherit;
+}
+textarea { min-height: 120px; resize: vertical; }
+.primary {
+  background: #245c4b;
+  color: white;
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.note {
+  background: #f8fbf8;
+  padding: 14px;
+  border: 1px solid #e0e9e2;
+  border-radius: 10px;
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+}
+.note h3 { margin-top: 0; }
+.note p { white-space: pre-wrap; }
+.note button {
+  margin-right: 8px;
+  margin-top: 5px;
+  cursor: pointer;
+}
+.done { text-decoration: line-through; color: gray; }
+[hidden] { display: none !important; }
+@media(max-width:600px) {
+  .layout { grid-template-columns: 1fr; }
+  nav { display: flex; gap: 5px; overflow-x: auto; }
+  nav button { min-width: 100px; text-align: center; }
+  main { padding: 14px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📚 StudySpace</h1>
+  <p>Your personal study and notes organizer</p>
+</header>
+
+<div class="layout">
+<nav>
+  <button onclick="showPage('dashboard')">🏠 Dashboard</button>
+  <button onclick="showPage('notes')">📝 My Notes</button>
+  <button onclick="showPage('tasks')">✅ My Tasks</button>
+</nav>
+
+<main>
+<section id="dashboard" class="panel">
+  <h2>Welcome, Student! 🌿</h2>
+  <p>Organize your lessons, save notes, and keep track of assignments.</p>
+  <h3 id="summary">You have 0 notes and 0 tasks.</h3>
+  <button class="primary" onclick="showPage('notes')">Start taking notes</button>
+</section>
+
+<section id="notes" class="panel" hidden>
+  <h2>📝 My Notes</h2>
+  <input id="search" placeholder="Search your notes..." oninput="renderNotes()">
+  <input id="title" placeholder="Note title">
+  <input id="subject" placeholder="Subject (e.g. Finance)">
+  <textarea id="content" placeholder="Write your lesson notes here..."></textarea>
+  <button class="primary" onclick="saveNote()">Save Note</button>
+  <button onclick="cancelEdit()">Clear</button>
+  <div id="noteList"></div>
+</section>
+
+<section id="tasks" class="panel" hidden>
+  <h2>✅ My Tasks</h2>
+  <form id="taskForm">
+    <input id="taskInput" placeholder="Assignment, exam, or homework..." required>
+    <button class="primary" type="submit">Add Task</button>
+  </form>
+  <div id="taskList"></div>
+</section>
+</main>
+</div>
+
+<script>
+const load = key => {
+  try { return JSON.parse(localStorage.getItem(key)) || []; }
+  catch { return []; }
+};
+
+let notes = load('studyspace_notes');
+let tasks = load('studyspace_tasks');
+let editingId = null;
+
+function persist() {
+  localStorage.setItem('studyspace_notes', JSON.stringify(notes));
+  localStorage.setItem('studyspace_tasks', JSON.stringify(tasks));
+  renderNotes();
+  renderTasks();
+  updateSummary();
+}
+
+function showPage(id) {
+  ['dashboard', 'notes', 'tasks'].forEach(page => {
+    document.getElementById(page).hidden = page !== id;
+  });
+}
+
+function escapeHTML(text) {
+  return String(text).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;',
+    '"': '&quot;', "'": '&#39;'
+  })[c]);
+}
+
+function saveNote() {
+  const title = document.getElementById('title').value.trim();
+  const subject = document.getElementById('subject').value.trim();
+  const content = document.getElementById('content').value.trim();
+
+  if (!title || !content) {
+    alert('Please enter a title and your notes.');
+    return;
+  }
+
+  if (editingId !== null) {
+    notes = notes.map(n => n.id === editingId
+      ? {...n, title, subject, content}
+      : n);
+  } else {
+    notes.unshift({id: Date.now(), title, subject, content});
+  }
+
+  cancelEdit();
+  persist();
+}
+
+function cancelEdit() {
+  editingId = null;
+  document.getElementById('title').value = '';
+  document.getElementById('subject').value = '';
+  document.getElementById('content').value = '';
+}
+
+function renderNotes() {
+  const query = (document.getElementById('search')?.value || '').toLowerCase();
+  const list = document.getElementById('noteList');
+
+  list.innerHTML = notes.filter(n =>
+    (n.title + ' ' + n.subject + ' ' + n.content)
+      .toLowerCase().includes(query)
+  ).map(n => `
+    <article class="note">
+      <h3>${escapeHTML(n.title)}</h3>
+      <small>${escapeHTML(n.subject || 'General')}</small>
+      <p>${escapeHTML(n.content)}</p>
+      <button onclick="editNote(${n.id})">Edit</button>
+      <button onclick="deleteNote(${n.id})">Delete</button>
+    </article>
+  `).join('') || '<p>No notes found. Create your first note!</p>';
+}
+
+function editNote(id) {
+  const n = notes.find(n => n.id === id);
+  if (!n) return;
+  editingId = id;
+  document.getElementById('title').value = n.title;
+  document.getElementById('subject').value = n.subject;
+  document.getElementById('content').value = n.content;
+  showPage('notes');
+  document.getElementById('title').focus();
+}
+
+function deleteNote(id) {
+  if (!confirm('Delete this note?')) return;
+  notes = notes.filter(n => n.id !== id);
+  persist();
+}
+
+document.getElementById('taskForm').addEventListener('submit', e => {
+  e.preventDefault();
+  tasks.push({
+    id: Date.now(),
+    text: document.getElementById('taskInput').value.trim(),
+    done: false
+  });
+  document.getElementById('taskInput').value = '';
+  persist();
+});
+
+function toggleTask(id) {
+  tasks = tasks.map(t => t.id === id ? {...t, done: !t.done} : t);
+  persist();
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  persist();
+}
+
+function renderTasks() {
+  document.getElementById('taskList').innerHTML = tasks.map(t => `
+    <div class="note">
+      <label>
+        <input type="checkbox" style="width:auto"
+          ${t.done ? 'checked' : ''}
+          onchange="toggleTask(${t.id})">
+        <span class="${t.done ? 'done' : ''}">${escapeHTML(t.text)}</span>
+      </label>
+      <button onclick="deleteTask(${t.id})">Delete</button>
+    </div>
+  `).join('') || '<p>No tasks yet. You can do it! 🌱</p>';
+}
+
+function updateSummary() {
+  document.getElementById('summary').textContent =
+    `You have ${notes.length} notes and ${tasks.filter(t => !t.done).length} unfinished tasks.`;
+}
+
+renderNotes();
+renderTasks();
+updateSummary();
+</script>
+</body>
+</html>
